@@ -1,4 +1,8 @@
 import psycopg2
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 # ==========================================
@@ -6,14 +10,14 @@ import psycopg2
 # ==========================================
 
 conn = psycopg2.connect(
-    host="localhost",
-    database="Pan_project",
-    user="postgres",
-    password="Siddiq@13",
-    port=5433
+    host=os.getenv("DB_HOST"),
+    database=os.getenv("DB_NAME"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    port=os.getenv("DB_PORT")
 )
 
-print("✅ PostgreSQL connection successful!")
+print("PostgreSQL connection successful!")
 
 
 # Create cursor
@@ -63,24 +67,33 @@ while True:
 
         if choice.lower() == "yes":
 
-            cursor.execute(
-                """
-                INSERT INTO ACCEPTED_USER_PANS
-                (ORIGINAL_INPUT, CLEAN_PAN)
-                VALUES (%s, %s)
-                """,
-                (original_input, cleaned_pan)
-            )
+            try:
 
-            conn.commit()
+                cursor.execute(
+                    """
+                    INSERT INTO ACCEPTED_USER_PANS
+                    (ORIGINAL_INPUT, CLEAN_PAN)
+                    VALUES (%s, %s)
+                    """,
+                    (original_input, cleaned_pan)
+                )
 
-            print("\n✅ PAN accepted successfully.")
+                conn.commit()
 
-            break
+                print("\nPAN accepted successfully.")
+
+                break
+
+            except psycopg2.errors.UniqueViolation:
+
+                conn.rollback()
+
+                print("\nThis PAN is already accepted.")
+                print("Please enter another PAN.")
 
         else:
 
-            print("\n❌ PAN was not accepted.")
+            print("\nPAN was not accepted.")
 
 
     # ==========================================
@@ -89,7 +102,7 @@ while True:
 
     elif status == "DUPLICATE":
 
-        print("\n❌ This PAN already exists in the system.")
+        print("\nThis PAN already exists in the system.")
         print("Please enter another PAN.")
 
 
@@ -99,7 +112,7 @@ while True:
 
     else:
 
-        print("\n❌ Invalid PAN.")
+        print("\nInvalid PAN.")
         print("Please enter the correct PAN.")
 
 
@@ -110,4 +123,4 @@ while True:
 cursor.close()
 conn.close()
 
-print("\n🔒 PostgreSQL connection closed.")
+print("\nPostgreSQL connection closed.")
